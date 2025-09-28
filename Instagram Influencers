@@ -1,0 +1,112 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Read CSV with provided encoding
+influencers_df = pd.read_csv('top_insta_influencers_data.csv', encoding='UTF-8-SIG')
+
+# Helper to convert abbreviated metrics like '3.3k', '8.7m', '29.0b', percentages like '1.39%'
+
+def parse_number(val):
+    if pd.isna(val):
+        return np.nan
+    if isinstance(val, (int, float)):
+        return float(val)
+    s = str(val).strip().lower()
+    if s.endswith('%'):
+        try:
+            return float(s.replace('%', ''))
+        except:
+            return np.nan
+    mult = 1.0
+    if s.endswith('k'):
+        mult = 1e3
+        s = s[:-1]
+    elif s.endswith('m'):
+        mult = 1e6
+        s = s[:-1]
+    elif s.endswith('b'):
+        mult = 1e9
+        s = s[:-1]
+    s = s.replace(',', '')
+    try:
+        return float(s) * mult
+    except:
+        return np.nan
+
+# Apply parsing to relevant columns
+for col in ['posts', 'followers', 'avg_likes', '60_day_eng_rate', 'new_post_avg_like', 'total_likes']:
+    influencers_df[col + '_num'] = influencers_df[col].apply(parse_number)
+
+# Quick preview
+print(influencers_df.head())
+print(influencers_df[['posts_num','followers_num','avg_likes_num','60_day_eng_rate_num','total_likes_num']].describe())
+print('Loaded and parsed data')
+
+# This cell generates the requested visualizations using the parsed numeric columns.
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Use a consistent style
+sns.set(style='whitegrid')
+
+# 1) Scatter: Followers vs. Engagement Rate by Country
+plt.figure(figsize=(8,6))
+sns.scatterplot(data=influencers_df, x='followers_num', y='60_day_eng_rate_num', hue='country', alpha=0.8)
+plt.title('Followers vs. Engagement Rate by Country')
+plt.xlabel('Followers')
+plt.ylabel('60 Day Engagement Rate (%)')
+plt.tight_layout()
+plt.show()
+
+# 2) Bar: Top 10 by Followers
+top10 = influencers_df.sort_values('followers_num', ascending=False).head(10)
+plt.figure(figsize=(10,6))
+sns.barplot(data=top10, x='channel_info', y='followers_num', palette='viridis')
+plt.title('Top 10 Instagram Influencers by Followers')
+plt.xlabel('Channel')
+plt.ylabel('Followers')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.show()
+
+# 3) Box plot: Avg Likes by Country
+plt.figure(figsize=(10,6))
+sns.boxplot(data=influencers_df, x='country', y='avg_likes_num')
+plt.title('Distribution of Average Likes by Country')
+plt.xlabel('Country')
+plt.ylabel('Average Likes')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.show()
+
+# 4) Histogram: Influence Scores
+plt.figure(figsize=(8,6))
+sns.histplot(influencers_df['influence_score'], bins=20, kde=True)
+plt.title('Distribution of Influence Scores')
+plt.xlabel('Influence Score')
+plt.ylabel('Count')
+plt.tight_layout()
+plt.show()
+
+# 5) Horizontal bar: Top 20 by Total Likes
+top20_likes = influencers_df.sort_values('total_likes_num', ascending=False).head(20)
+plt.figure(figsize=(10,8))
+sns.barplot(data=top20_likes, y='channel_info', x='total_likes_num', palette='mako')
+plt.title('Top 20 Influencers by Total Likes')
+plt.xlabel('Total Likes')
+plt.ylabel('Channel')
+plt.tight_layout()
+plt.show()
+
+# 6) Scatter: Posts vs. Followers
+plt.figure(figsize=(8,6))
+sns.scatterplot(data=influencers_df, x='posts_num', y='followers_num', alpha=0.8)
+plt.title('Posts vs. Followers Relationship')
+plt.xlabel('Posts')
+plt.ylabel('Followers')
+plt.tight_layout()
+plt.show()
+
+print('Generated all requested plots')
